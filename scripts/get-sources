@@ -136,11 +136,17 @@ else
     fi
 fi
 
+pushd "$REPO" &> /dev/null || exit 1
+
+tracking_branch="refs/remotes/$GIT_REMOTE/$BRANCH"
+if [ -n "$GIT_REMOTE" ] && [ -f ".git/$tracking_branch" ]; then
+    git update-ref -- "$tracking_branch" "$VERIFY_REF"
+fi
+
 if [ "${FETCH_ONLY-}" == "1" ]; then
     exit 0
 fi
 
-pushd "$REPO" &> /dev/null || exit 1
 CURRENT_BRANCH="$(exec git branch --show-current)"
 if [ "$CURRENT_BRANCH" != "$BRANCH" ] || "$fresh_clone"; then
     if [ -z "${NO_COLOR=}" ]; then
@@ -160,10 +166,6 @@ fi
 if ! "$fresh_clone"; then
     echo "--> Merging..."
     git -c merge.verifySignatures=no merge --ff-only --commit -q "$VERIFY_REF"
-    tracking_branch="refs/remotes/$GIT_REMOTE/$BRANCH"
-    if [ -f ".git/$tracking_branch" ]; then
-        git update-ref -- "$tracking_branch" "$VERIFY_REF"
-    fi
 fi
 
 popd >/dev/null|| exit 1
